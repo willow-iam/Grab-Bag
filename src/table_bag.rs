@@ -33,17 +33,15 @@ impl<T:Key,R:SeedableRng+Rng,C:Counter> Bag<T> for TableBag<T,R,C>{
                 **count -= C::one();
                 return Some(rax.clone());
             }
-            Err(error) => {
-                match error {
-                    WeightedError::NoItem => None,
-                    WeightedError::InvalidWeight => None,
-                    _ => panic!("{error}")
-                }
-            },
+            Err(_error @ ( 
+                WeightedError::NoItem 
+                | WeightedError::InvalidWeight 
+                | WeightedError::AllWeightsZero )) => None,
+            Err(_error @ WeightedError::TooMany) => unreachable!()
         }
     }
 
-    fn new<I:Iterator<Item=T>>(items:I)-> Self {
+    fn new<I:Iterator<Item=T>>(items:I) -> Self {
         let mut rax = TableBag{
             items:HashMap::new(),
             rng:R::from_entropy()
